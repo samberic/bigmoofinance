@@ -52,24 +52,62 @@ everything else is derived.
 - **Little Moo salary** — fixed monthly amount (current: £3,050).
 - **Big Moo salary** — fixed monthly amount (current: £8,835).
 
-### 3.3 Outgoings — fixed bills (per period)
-A flat list of named bills paid from the Bills pot, each with a monthly amount.
-The list must be editable (add/remove/rename rows). Current contents:
+### 3.3 Outgoings — bills (per period)
+Bills are funded into the **Bills pot**, from which the direct debits are paid.
+The list must be editable (add/remove/rename rows). A bill is one of two kinds:
+
+- **Flat** — a fixed amount that debits every month; these empty the pot cleanly.
+- **Smoothed** — billed irregularly (e.g. 10 months a year, or quarterly) but
+  funded at **annual ÷ 12** every month, so the pot accrues a float in the
+  off-months and pays the lump when due. See §3.3.1.
+
+This list was reconciled against 3 months of Monzo statements (Mar–May 2026);
+see §12 for the full reconciliation. Corrected contents:
+
+#### Flat monthly bills (empty the pot each month)
 
 | Bill | £/mo | | Bill | £/mo |
 |------|-----:|---|------|-----:|
-| Mortgage | 2,748 | | Sky | 33 |
-| Sainsbury's CC | 80 | | NUS | 28 |
+| Mortgage | 2,748 | | Sky | 45 |
+| NatWest *(ex-Sainsbury's CC)* | 80 | | NUS | 28 |
 | Barclays CC | 125 | | Life insurance | 22 |
 | Energy | 308 | | National Trust | 14 |
-| Council Tax | 351 | | Peloton | 45 |
-| ISA | 500 | | Pet insurance | 34 |
-| Swim | 107 | | TV License | 12 |
-| Kids savings | 200 | | Ailsa | 10 |
-| DVLA | 17 | | Guildford city | (blank) |
-| Water | 67 | | Dog food | 60 |
+| ISA | 500 | | Ailsa | 10 |
+| Swim | 107 | | NHS Prescription | 11.45 |
+| Kids savings | 200 | | DVLA | 17 |
+| Water | 67 | | | |
 
-**Total fixed bills = £4,761/period.**
+**Flat bills subtotal = £4,282.45/period.**
+
+#### Smoothed bills (annual ÷ 12 — pot carries a float, see §3.3.1)
+
+| Bill | Annual £ | £/mo | Billed |
+|------|---------:|-----:|--------|
+| Council Tax | 3,500 *(est — confirm actual annual)* | 291.67 | 10 installments/yr |
+| TV License | 179.48 | 14.96 | quarterly (~£44.87) |
+
+**Smoothed subtotal = £306.63/period.**
+
+> **Total Bills pot funding = £4,589.08/period** (was £4,761 — see changes below).
+
+**Changes from the original sheet (reason the pot never emptied):**
+- **Sainsbury's CC → NatWest** — same debit, NatWest took the card over (~£80). Kept.
+- **Barclays CC £125** — kept as-is (variable repayment; do not smooth).
+- **NUS £28** — kept; the *payment* will be adjusted to match the £28 budget.
+- **Sky £33 → £45** — was under-budgeted (two Sky DDs / price rise).
+- **Council Tax & TV License** — moved to *smoothed* (annual ÷ 12), §3.3.1.
+- **Removed: Peloton (£45), Dog food (£60), Pet insurance (£34)** — these are
+  **card payments from the Main account**, never debited from the Bills pot. They
+  belong to Main/spending (§3.4), not bills. Leaving them in the bills list was
+  the bulk of the ~£195/mo that piled up in the pot.
+
+### 3.3.1 Smoothed-bill behaviour (sinking float)
+A smoothed bill is funded at `annual ÷ 12` every period but debits only in the
+months it is actually billed. Consequently the Bills pot is **deliberately not
+empty** at month-end — it holds a sinking-fund float for these bills that
+**nets to zero across a full year**. This residue is *saved-up money toward the
+next bill, not surplus to be swept out*. Only flat bills are expected to empty
+the pot monthly.
 
 ### 3.4 Spending rates
 - **Daily spend** — total day-to-day outflow per day (current: £100/day). **This
@@ -184,14 +222,14 @@ occurrences in the period* is financially material.
 | # | Output | Definition | Current value |
 |---|--------|-----------|--------------:|
 | C1 | **Total In** | Little Moo salary + Big Moo salary | £11,885 |
-| C2 | **Bills pot** | Σ fixed bills | £4,761 |
+| C2 | **Bills pot** | Σ flat bills + Σ (smoothed bill annual ÷ 12) | £4,589.08 |
 | C3 | **Cleaner pot** | Cleaning-day count × cleaner rate | £208 |
 | C4 | **Commute pot** | (Commute-day count + bonus) × commute rate | £240 |
 | C5 | **Main (spending) pot** | (Daily spend × Days in period) − Cleaner pot − Commute pot | £2,652 |
 | C6 | **Moo money pot** | Manual input | £1,100 |
 | C7 | **Lumpy pot** | (Σ lumpy annual) ÷ 12 | £491.42 |
 | C8 | **Holidays pot** | Σ (trip total ÷ months to save) | £633.33 |
-| C9 | **Savings** | Total In − (Bills + Cleaner + Commute + Main + Moo + Lumpy + Holidays) | £1,799.25 |
+| C9 | **Savings** | Total In − (Bills + Cleaner + Commute + Main + Moo + Lumpy + Holidays) | £1,971.17 |
 
 **Cleaner and Commute are carved out of the daily total, not added on top** (C5):
 because the £100/day already funds them, total day-to-day spend stays at
@@ -200,6 +238,11 @@ savings residual is unchanged by the split.
 
 `Savings` is the residual and is the headline figure the user reads off
 ("Total Saving") — i.e. what's left after every pot is funded.
+
+> Correcting the bills list (§3.3) cut the Bills pot from £4,761 to £4,589.08,
+> raising recognised savings by ~£172/mo. That ~£172 was previously piling up
+> unspent in the Bills pot — it was never waste, just **savings the sheet failed
+> to recognise**.
 
 ---
 
@@ -210,7 +253,7 @@ allocated, and the residual savings:
 
 ```
 Total In ............ 11,885.00
-  Bills ............. 4,761.00
+  Bills ............. 4,589.08
   Cleaner ........... 208.00
   Commute ........... 240.00
   Main / spending ... 2,652.00
@@ -218,7 +261,7 @@ Total In ............ 11,885.00
   Lumpy ............. 491.42
   Holidays .......... 633.33
   ---------------------------
-  Savings ........... 1,799.25
+  Savings ........... 1,971.17
 ```
 
 Plus contextual readouts: pay-period start/end dates, number of days in the
@@ -277,11 +320,18 @@ period, and the cleaning-day / commute-day counts.
   must simply be **editable**, so that e.g. booking a holiday lets the user raise
   that fund's monthly contribution.
 
-### Remaining minor item
+- **Q6 (bills reconciliation) — ✅ Resolved.** Bills list corrected against 3
+  months of statements (§3.3, §12). Smoothed-bill approach (Option B) adopted for
+  Council Tax & TV License; three card-paid items removed from bills.
+
+### Remaining minor items
 - **R1** — Confirm the bank-holiday calendar source/region (assumed England &
   Wales) and behaviour if a pay date and its day-before are both around a
   multi-day bank-holiday weekend (the working-day roll-back handles this, but
   worth a sanity check against a real Easter/Christmas example).
+- **R2** — Provide the **actual annual Council Tax** (or installment × count); the
+  £3,500 used for the £291.67/mo smoothed figure is an estimate from the Mar–May
+  installments (~£338–354).
 
 ---
 
@@ -295,15 +345,44 @@ Given the §3 inputs and pay month **May** (period 18 Apr 2026 → 19 May 2026, 
 | Days in period | 31 |
 | Cleaning days / Commute days | 4 / 4 |
 | Total In | 11,885.00 |
-| Bills pot | 4,761.00 |
+| Bills pot | 4,589.08 |
 | Cleaner pot | 208.00 |
 | Commute pot | 240.00 |
 | Main / spending pot | 2,652.00 |
 | Moo money pot | 1,100.00 |
 | Lumpy pot | 491.42 |
 | Holidays pot | 633.33 |
-| **Savings (residual)** | **1,799.25** |
+| **Savings (residual)** | **1,971.17** |
 
-A correct re-implementation fed the §3 inputs must reproduce this table. Note the
-savings residual is unchanged from the pre-split model — Cleaner and Commute are
-reorganised *out of* Main, not added on top.
+A correct re-implementation fed the §3 inputs must reproduce this table. The Bills
+pot uses the reconciled list (§3.3); savings rose from £1,799.25 to £1,971.17 once
+the card-paid items were removed from bills. (Council Tax £3,500 annual is an
+estimate — confirming the real annual will shift Bills and Savings slightly.)
+
+---
+
+## 12. Bills reconciliation (Mar–May 2026 Monzo statements)
+
+The original sheet funded the Bills pot at £4,761/mo but only ~£4,566/mo actually
+debited it, leaving ~£195/mo to pile up. Mechanism: Monzo's Bills pot auto-covers
+each direct debit with an equal transfer out of the pot; the pot is refilled in a
+lump on payday, so it empties only if funding matches the actual debits.
+
+Root causes and fixes:
+
+| Item | Original | Finding | Fix |
+|------|---------:|---------|-----|
+| Sainsbury's CC | 80 | Card taken over by **NatWest**; the ~£80 NatWest DD *is* this line | Rename → NatWest, keep £80 |
+| Peloton | 45 | **Card payment from Main**, never a pot DD | Remove from bills → Main spend |
+| Dog food | 60 | Tails.com **card payment from Main** | Remove from bills → Main spend |
+| Pet insurance | 34 | No matching pot DD found | Remove from bills |
+| Sky | 33 | Actual ~£44–49 (two DDs / price rise) | Raise to £45 |
+| NHS Prescription | — | £11.45/mo DD paid from pot, unbudgeted | Add £11.45 |
+| Barclays CC | 125 | Variable repayment | Keep £125 (do not smooth) |
+| NUS | 28 | DD is £24 | Keep £28; adjust the *payment* to match |
+| Council Tax | 351 | 10 installments/yr → £0 in 2 months | **Smooth**: annual ÷ 12 ≈ £291.67 |
+| TV License | 12 | Quarterly ~£44.87 | **Smooth**: annual ÷ 12 ≈ £14.96 |
+
+Net effect: Bills pot funding £4,761 → **£4,589.08/mo**; the freed ~£172/mo is
+recognised as savings. The remaining month-to-month residue in the pot is the
+intended sinking float for the smoothed bills (§3.3.1), which nets to zero yearly.
