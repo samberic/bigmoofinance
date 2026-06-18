@@ -386,3 +386,64 @@ Root causes and fixes:
 Net effect: Bills pot funding £4,761 → **£4,589.08/mo**; the freed ~£172/mo is
 recognised as savings. The remaining month-to-month residue in the pot is the
 intended sinking float for the smoothed bills (§3.3.1), which nets to zero yearly.
+
+---
+
+## 13. Bills pot target balance (end-of-month)
+
+The tool must show a **target pot balance** for the end of each month, so the user
+can check the actual Bills pot against it.
+
+**Principle:**
+- **Flat bills** (§3.3) are funded and paid the same month → they contribute **£0**
+  to the target. The pot should clear them to zero every month.
+- **Smoothed bills** (§3.3.1) are funded at `annual ÷ 12` but paid in bursts → they
+  leave a **sinking float** in the pot. **The end-of-month target = the sum of the
+  smoothed-bill floats.**
+
+**Float rule (per smoothed bill).** Starting from its trough (the month-end right
+after its final payment of the cycle), the float moves each month by:
+- `+ monthly set-aside` in a non-billing month, and
+- `− (bill amount − monthly set-aside)` in a billing month.
+
+Over a full year it returns to the trough (nets to zero). Per current bills:
+
+| Smoothed bill | Set-aside/mo | Builds (non-bill mo) | Draws down (bill mo) | Float range |
+|---------------|-------------:|---------------------:|---------------------:|-------------|
+| Council Tax | 291.67 | +291.67 | −58.33 | £0 → ~£583 |
+| TV License | 14.96 | +14.96 | −29.91 | £0 → ~£30 |
+
+**Target table (illustrative — confirm billing calendar, see below).**
+Assumes Council Tax £0 in **Feb & Mar** and TV License paid **Jan/Apr/Jul/Oct**:
+
+| Month-end | Council Tax | TV License | **Target pot** |
+|-----------|------------:|-----------:|---------------:|
+| Jan | 0.00 | 0.00 | **0.00** |
+| Feb | 291.67 | 14.96 | **306.63** |
+| Mar | 583.33 | 29.91 | **613.24** |
+| Apr | 525.00 | 0.00 | **525.00** |
+| May | 466.67 | 14.96 | **481.63** |
+| Jun | 408.33 | 29.91 | **438.24** |
+| Jul | 350.00 | 0.00 | **350.00** |
+| Aug | 291.67 | 14.96 | **306.63** |
+| Sep | 233.33 | 29.91 | **263.24** |
+| Oct | 175.00 | 0.00 | **175.00** |
+| Nov | 116.67 | 14.96 | **131.63** |
+| Dec | 58.33 | 29.91 | **88.24** |
+
+**How to read it:**
+- The pot is **not** meant to be empty most months — only at the Council Tax trough
+  (~end of Jan here). Peak is ~£613 (end Mar).
+- **Pot ≈ target** → funding is correct. **Pot > target** (by more than a few £) →
+  over-funding (a card-paid item crept back into bills, or a bill shrank). **Pot <
+  target** → under-funded; a smoothed bill will be short when it lands.
+- **First-year seeding:** in steady state the float is already built up. When first
+  switching to smoothing you must seed the pot up to that month's target (e.g.
+  ~£525 if you start in April), otherwise an early Council Tax installment overdraws
+  it. After one full cycle it self-sustains.
+
+> **To finalise the exact table I need three inputs (also R2):**
+> 1. Actual **annual Council Tax** (or installment × count) — £3,500 is an estimate.
+> 2. Which **two months Council Tax is £0** — the Mar 2026 statement shows a payment,
+>    so the Feb/Mar assumption above is probably wrong for your council.
+> 3. Which **months the TV License** quarterly payment lands.
