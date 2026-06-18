@@ -31,7 +31,7 @@ month** — plus the per-pot transfer amounts that produce it.
 
 | Term | Meaning |
 |------|---------|
-| **Pay date** | The day salary lands: nominally the 20th of the month, rolled back to the nearest preceding working day if the 20th is a weekend. |
+| **Pay date** | The day salary actually lands. Nominally the 20th, adjusted for the employer's weekend rule **and** Monzo's pay-a-day-early scheme (see §4). |
 | **Pay period / budget month** | The window from the day after the *previous* pay date up to and including the *current* pay date. This is the period all spending is scaled to. |
 | **Pot** | A destination for money: an account or sinking fund (Bills, Main/spending, Moo money, Lumpy, Holidays, Savings). |
 | **Lumpy** | Large, irregular, predictable annual expenses, smoothed into a monthly set-aside (annual total ÷ 12). |
@@ -109,22 +109,44 @@ Holiday set-aside **= £633.33/period.**
 
 ## 4. Pay-period / date logic
 
-The period boundaries are computed from the selected pay month:
+### 4.1 Actual pay-landing date
 
-1. **This pay date** = the 20th of the selected pay month (in the current year).
-2. **Previous pay date** = the 20th of the prior month (December of the prior year if the selected month is January).
-3. **Weekend roll-back**: if a pay date falls on a weekend, salary lands on the
-   nearest **preceding working day**. The current period:
-   - **Start date** = (previous pay date, weekend-adjusted) **+ 1 day**.
-   - **End date** = (this pay date, weekend-adjusted).
-4. **Days in period** = End date − Start date (inclusive count). Current example: 18 Apr 2026 → 19 May 2026 = **31 days**.
+The nominal pay date is the **20th** of the month, but the date money actually
+lands is adjusted in **two stages** (confirmed intentional by the user):
 
-> **Open question (Q1):** The spreadsheet's weekend test treats the 20th as
-> "weekend-affected" when it is a **Saturday, Sunday, *or Monday*** and the
-> roll-back arithmetic lands on Thursday in some cases rather than Friday. The
-> *intended* rule appears to be simply "roll back to the Friday before a
-> Sat/Sun pay date." The new implementation should implement the clean intent
-> and confirm the exact rule with the user. Treat WEEKDAY as Sunday=1 … Saturday=7.
+1. **Employer rule** — salary is due on the 20th. If the 20th is a **Saturday or
+   Sunday**, the employer pays on the **preceding Friday**.
+   - Sun 20th → Fri 18th; Sat 20th → Fri 19th.
+2. **Monzo early-pay** — the bank deposits funds **one day before** the employer's
+   pay-in date. If that day is itself a weekend, it rolls back to the **preceding
+   Friday**.
+
+Combined, the actual landing date by the weekday of the 20th (WEEKDAY: Sun=1 … Sat=7):
+
+| 20th falls on | Employer pays | Monzo lands (= actual) |
+|---------------|---------------|------------------------|
+| Sunday | Fri 18th | **Thu 17th** |
+| Monday | Mon 20th | Sun 19th → **Fri 17th** |
+| Tuesday | Tue 20th | **Mon 19th** |
+| Wednesday | Wed 20th | **Tue 19th** |
+| Thursday | Thu 20th | **Wed 19th** |
+| Friday | Fri 20th | **Thu 19th** |
+| Saturday | Fri 19th | **Thu 18th** |
+
+> The "weekend" test therefore flags the 20th when it is a **Saturday, Sunday,
+> *or Monday*** — Monday is included precisely because Monzo's day-before then
+> falls on a Sunday and rolls back to Friday. This is correct, not a bug.
+
+> This date model is driven by **Big Moo's** salary (the primary earner). Bank
+> holidays are **not** modelled — see Q1.
+
+### 4.2 Period boundaries
+
+1. **This pay date** = actual landing date for the 20th of the selected pay month (§4.1).
+2. **Previous pay date** = actual landing date for the 20th of the prior month (December of the prior year if the selected month is January).
+3. **Start date** = previous pay landing date **+ 1 day**.
+4. **End date** = this pay landing date.
+5. **Days in period** = End date − Start date (inclusive). Current example: 18 Apr 2026 → 19 May 2026 = **31 days**.
 
 ---
 
@@ -201,8 +223,7 @@ Plus contextual readouts: pay-period start/end dates and number of days in the p
 
 1. **`#REF!` in weekday counters** (`B4`, `B5`, `B7`) — formulas reference deleted
    cells (`SEQUENCE(..., #REF!, ...)`) and silently return 0. Re-implement cleanly per §5.
-2. **Weekend roll-back arithmetic** is inconsistent (§4 Q1) — implement the intent.
-3. **`H12` "Monthly Spends"** mixes a typo `(B7 * (K27 + K27))` — note `K27` is
+2. **`H12` "Monthly Spends"** mixes a typo `(B7 * (K27 + K27))` — note `K27` is
    added to itself (should almost certainly be `K27 + K28`). This cell is not
    wired to any pot, so the bug is currently latent.
 4. **Dead / disconnected cells:** "Weekly" (`H11`), "Monthly Spends" (`H12`),
@@ -216,7 +237,7 @@ Plus contextual readouts: pay-period start/end dates and number of days in the p
 
 ## 10. Open questions for the user
 
-- **Q1** — Exact pay-date weekend rule: roll back to the Friday before a Sat/Sun 20th? What about when the 20th is a bank holiday?
+- **Q1** — ✅ *Resolved.* Pay-date rule confirmed (§4.1): employer pays Friday for a Sat/Sun 20th, Monzo deposits one day early with its own weekend roll-back. **Remaining sub-question:** bank holidays are not modelled — should they shift the landing date too?
 - **Q2** — Should variable per-weekday costs (cleaning / London commute / Mondays) feed the spending pot, and at what £ rates? If yes, this replaces or augments §6 C3.
 - **Q3** — Rounding: round each pot to the penny, or to whole pounds? Should Savings absorb the rounding remainder so pots always reconcile to Total In?
 - **Q4** — Are salaries ever variable (bonus months), or always fixed? Should the model support a one-off income line?
