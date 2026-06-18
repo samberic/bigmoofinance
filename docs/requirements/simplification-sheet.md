@@ -72,8 +72,11 @@ The list must be editable (add/remove/rename rows). Current contents:
 **Total fixed bills = £4,761/period.**
 
 ### 3.4 Spending rates
-- **Daily spend** — discretionary spend per day (current: £100/day).
-- *(Weekly / Monthly spend rows exist in the sheet but do not feed the pots — see §9.4.)*
+- **Daily spend** — total day-to-day outflow per day (current: £100/day). **This
+  is an all-in figure that already includes cleaner and commute costs**, so those
+  are carved *out* of the daily total rather than added on top — see §6 C3.
+- **Cleaner rate** — cost per cleaner visit, charged once a week (current: £52/week).
+- **Commute rate** — cost per commute day, one commute day a week (current: £60/day).
 
 ### 3.5 Lumpy items (annual, smoothed ÷12)
 Editable list of `{name, annual £}`:
@@ -103,7 +106,7 @@ Holiday set-aside **= £633.33/period.**
 
 ### 3.7 Manual pot overrides
 - **Moo money** — fixed transfer (current: £1,100, described as "Moo bonus plus insurance").
-- **Bonus London** — manual adjustment to commute-day count (current: 0).
+- **Bonus London** — manual **extra commute days** added to the auto-counted commute days (current: 0). Each bonus day is charged at the commute rate.
 
 ---
 
@@ -111,17 +114,22 @@ Holiday set-aside **= £633.33/period.**
 
 ### 4.1 Actual pay-landing date
 
-The nominal pay date is the **20th** of the month, but the date money actually
-lands is adjusted in **two stages** (confirmed intentional by the user):
+A **working day** is Monday–Friday excluding **England & Wales bank holidays**
+(bank-holiday shifting confirmed by the user). The nominal pay date is the
+**20th**, adjusted in **two stages**:
 
-1. **Employer rule** — salary is due on the 20th. If the 20th is a **Saturday or
-   Sunday**, the employer pays on the **preceding Friday**.
-   - Sun 20th → Fri 18th; Sat 20th → Fri 19th.
-2. **Monzo early-pay** — the bank deposits funds **one day before** the employer's
-   pay-in date. If that day is itself a weekend, it rolls back to the **preceding
-   Friday**.
+1. **Employer rule** — salary is due on the 20th. If the 20th is **not a working
+   day**, the employer pays on the **preceding working day**.
+   - e.g. Sun 20th → Fri 18th; Sat 20th → Fri 19th; if the resulting Friday is a
+     bank holiday, step back again to Thursday.
+2. **Monzo early-pay** — the bank deposits funds on the **working day immediately
+   before** the employer's pay-in date.
 
-Combined, the actual landing date by the weekday of the 20th (WEEKDAY: Sun=1 … Sat=7):
+Equivalently: **actual landing date = the working day immediately before the
+first working day on-or-before the 20th.**
+
+Ignoring bank holidays, the actual landing date by the weekday of the 20th
+(WEEKDAY: Sun=1 … Sat=7):
 
 | 20th falls on | Employer pays | Monzo lands (= actual) |
 |---------------|---------------|------------------------|
@@ -137,8 +145,9 @@ Combined, the actual landing date by the weekday of the 20th (WEEKDAY: Sun=1 …
 > *or Monday*** — Monday is included precisely because Monzo's day-before then
 > falls on a Sunday and rolls back to Friday. This is correct, not a bug.
 
-> This date model is driven by **Big Moo's** salary (the primary earner). Bank
-> holidays are **not** modelled — see Q1.
+> This date model is driven solely by **Big Moo's** salary. Little Moo is paid on
+> a different schedule, but that is irrelevant here: Big Moo's income funds every
+> pot except the savings residual, so only Big Moo's pay date defines the period.
 
 ### 4.2 Period boundaries
 
@@ -146,25 +155,27 @@ Combined, the actual landing date by the weekday of the 20th (WEEKDAY: Sun=1 …
 2. **Previous pay date** = actual landing date for the 20th of the prior month (December of the prior year if the selected month is January).
 3. **Start date** = previous pay landing date **+ 1 day**.
 4. **End date** = this pay landing date.
-5. **Days in period** = End date − Start date (inclusive). Current example: 18 Apr 2026 → 19 May 2026 = **31 days**.
+5. **Days in period** = End date − Start date (the spreadsheet's `DAYS` count, i.e. exclusive of one endpoint). Current example: 18 Apr 2026 → 19 May 2026 = **31**.
 
 ---
 
-## 5. Weekday counters (for period-scaled spending)
+## 5. Weekday counters → variable-cost pots
 
-The model counts occurrences of specific weekdays within the pay period, intended
-to drive variable costs:
+The model counts how many times a given weekday occurs within the pay period.
+These counts drive two **dedicated pots** (confirmed with the user):
 
-- **Cleaning days** — count of Thursdays in the period.
-- **London (commute) days** — count of Wednesdays in the period × 2, plus a manual **Bonus London** adjustment.
-- **Mondays in period** — count of Mondays.
+- **Cleaning days** — count of the cleaner's weekday (Thursday in the source
+  sheet) in the period. Once a week → one count per week.
+  → **Cleaner pot = cleaning-day count × cleaner rate (£52).**
+- **Commute days** — count of the commute weekday (Wednesday in the source sheet)
+  in the period, **plus** the manual **Bonus London** extra days (§3.7).
+  → **Commute pot = (commute-day count + bonus days) × commute rate (£60).**
 
-> **Open question (Q2):** In the current sheet these three counters are **broken**
-> (`#REF!`, evaluating to 0) and the cells they would feed (per-day extra cost
-> `K27`/`K28`) are empty, so they have **no effect on the pots today**. The new
-> implementation must decide whether variable per-weekday costs (cleaner fee per
-> Thursday, commute cost per London day, etc.) should feed the spending pot, and
-> if so at what rate. Until specified, the spending pot is daily-rate-only (§6).
+The specific weekday for each should be configurable; only the *number of
+occurrences in the period* is financially material.
+
+> The old "× 2" multiplier on commute days is dropped — commute is now once a
+> week at £60/day. The "Mondays in period" counter is no longer used.
 
 ---
 
@@ -174,13 +185,21 @@ to drive variable costs:
 |---|--------|-----------|--------------:|
 | C1 | **Total In** | Little Moo salary + Big Moo salary | £11,885 |
 | C2 | **Bills pot** | Σ fixed bills | £4,761 |
-| C3 | **Main (spending) pot** | Daily spend × Days in period | £3,100 |
-| C4 | **Moo money pot** | Manual input | £1,100 |
-| C5 | **Lumpy pot** | (Σ lumpy annual) ÷ 12 | £491.42 |
-| C6 | **Holidays pot** | Σ (trip total ÷ months to save) | £633.33 |
-| C7 | **Savings** | Total In − (Bills + Main + Moo + Lumpy + Holidays) | £1,799.25 |
+| C3 | **Cleaner pot** | Cleaning-day count × cleaner rate | £208 |
+| C4 | **Commute pot** | (Commute-day count + bonus) × commute rate | £240 |
+| C5 | **Main (spending) pot** | (Daily spend × Days in period) − Cleaner pot − Commute pot | £2,652 |
+| C6 | **Moo money pot** | Manual input | £1,100 |
+| C7 | **Lumpy pot** | (Σ lumpy annual) ÷ 12 | £491.42 |
+| C8 | **Holidays pot** | Σ (trip total ÷ months to save) | £633.33 |
+| C9 | **Savings** | Total In − (Bills + Cleaner + Commute + Main + Moo + Lumpy + Holidays) | £1,799.25 |
 
-`Savings` is the residual and is the headline figure ("Total Saving").
+**Cleaner and Commute are carved out of the daily total, not added on top** (C5):
+because the £100/day already funds them, total day-to-day spend stays at
+`daily × days` (£3,100 = Main £2,652 + Cleaner £208 + Commute £240) and the
+savings residual is unchanged by the split.
+
+`Savings` is the residual and is the headline figure the user reads off
+("Total Saving") — i.e. what's left after every pot is funded.
 
 ---
 
@@ -192,7 +211,9 @@ allocated, and the residual savings:
 ```
 Total In ............ 11,885.00
   Bills ............. 4,761.00
-  Main / spending ... 3,100.00
+  Cleaner ........... 208.00
+  Commute ........... 240.00
+  Main / spending ... 2,652.00
   Moo money ......... 1,100.00
   Lumpy ............. 491.42
   Holidays .......... 633.33
@@ -200,64 +221,89 @@ Total In ............ 11,885.00
   Savings ........... 1,799.25
 ```
 
-Plus contextual readouts: pay-period start/end dates and number of days in the period.
+Plus contextual readouts: pay-period start/end dates, number of days in the
+period, and the cleaning-day / commute-day counts.
 
 ---
 
 ## 8. Functional requirements (summary)
 
-- **FR1** Compute the pay period (start, end, day count) from the selected pay month per §4.
+- **FR1** Compute the pay period (start, end, day count) from the selected pay month per §4, using a working-day calendar that excludes weekends **and England & Wales bank holidays**.
 - **FR2** Sum the two salaries into Total In (§3.2).
 - **FR3** Maintain an editable list of fixed bills and sum them into the Bills pot (§3.3).
-- **FR4** Compute the Main/spending pot as daily rate × days in period (§6 C3).
-- **FR5** Maintain editable Lumpy items; set aside annual total ÷ 12 (§3.5).
-- **FR6** Maintain editable Holiday items; set aside Σ(total ÷ months) (§3.6).
-- **FR7** Accept manual Moo money and Bonus London inputs (§3.7).
-- **FR8** Compute Savings as the residual of Total In minus all funded pots (§6 C7).
-- **FR9** Present the pot allocation table and period readouts (§7).
-- **FR10** All amounts in GBP. Define and apply a consistent rounding rule (see Q3).
+- **FR4** Count cleaning days and commute days in the period; compute the Cleaner pot and Commute pot (incl. Bonus London) per §5.
+- **FR5** Compute the Main/spending pot as `(daily rate × days) − Cleaner − Commute`, so cleaner/commute are carved out of the daily total rather than double-counted (§6 C5).
+- **FR6** Maintain editable Lumpy items; set aside annual total ÷ 12 (§3.5).
+- **FR7** Maintain editable Holiday items; set aside Σ(total ÷ months). Editing a trip's amount/months (e.g. after booking) must immediately change its monthly contribution (§3.6, Q5).
+- **FR8** Accept manual Moo money and Bonus London inputs (§3.7).
+- **FR9** Compute Savings as the residual of Total In minus all funded pots (§6 C9).
+- **FR10** Present the pot allocation table and period readouts (§7). All amounts in GBP; no special rounding required — display the residual (Q3).
 
 ---
 
 ## 9. Known defects in the source sheet (must NOT be carried over)
 
 1. **`#REF!` in weekday counters** (`B4`, `B5`, `B7`) — formulas reference deleted
-   cells (`SEQUENCE(..., #REF!, ...)`) and silently return 0. Re-implement cleanly per §5.
-2. **`H12` "Monthly Spends"** mixes a typo `(B7 * (K27 + K27))` — note `K27` is
-   added to itself (should almost certainly be `K27 + K28`). This cell is not
-   wired to any pot, so the bug is currently latent.
-4. **Dead / disconnected cells:** "Weekly" (`H11`), "Monthly Spends" (`H12`),
-   `B43`, and the scratch block `K40:K68` are not referenced by the pot
-   calculations. Decide whether they represent intended-but-unfinished features
-   (variable spend modelling) or can be dropped.
-5. **`H37` is labelled "Holidays total"** but actually holds the *monthly*
+   cells (`SEQUENCE(..., #REF!, ...)`) and silently return 0. The rebuild
+   re-implements these cleanly as the Cleaner/Commute counts (§5).
+2. **`H12` "Monthly Spends"** has a typo `(B7 * (K27 + K27))` — `K27` is added to
+   itself (should have been `K27 + K28`). Superseded by the explicit Cleaner and
+   Commute pots, so the cell is dropped.
+3. **Dead / disconnected cells:** "Weekly" (`H11`), "Monthly Spends" (`H12`),
+   `B43`, and the scratch block `K40:K68` were never referenced by the pot
+   calculations — half-built variable-spend modelling now formalised as the
+   Cleaner/Commute pots (§5). Drop the leftovers.
+4. **`H37` is labelled "Holidays total"** but actually holds the *monthly*
    set-aside (each item is pre-divided). Rename for clarity in the rebuild.
 
 ---
 
-## 10. Open questions for the user
+## 10. Resolved decisions
 
-- **Q1** — ✅ *Resolved.* Pay-date rule confirmed (§4.1): employer pays Friday for a Sat/Sun 20th, Monzo deposits one day early with its own weekend roll-back. **Remaining sub-question:** bank holidays are not modelled — should they shift the landing date too?
-- **Q2** — Should variable per-weekday costs (cleaning / London commute / Mondays) feed the spending pot, and at what £ rates? If yes, this replaces or augments §6 C3.
-- **Q3** — Rounding: round each pot to the penny, or to whole pounds? Should Savings absorb the rounding remainder so pots always reconcile to Total In?
-- **Q4** — Are salaries ever variable (bonus months), or always fixed? Should the model support a one-off income line?
-- **Q5** — Should funded sinking funds (Lumpy, Holidays) track a running balance across months, or is this a single-month snapshot only?
+- **Q1 — ✅ Resolved.** Pay-date rule per §4.1: employer pays the preceding
+  working day for a non-working 20th; Monzo deposits one working day earlier.
+  **Bank holidays do shift the landing date** — the working-day calendar
+  excludes England & Wales bank holidays.
+- **Q2 — ✅ Resolved.** Cleaner and Commute become their own pots: Cleaner £52
+  per weekly visit, Commute £60 per commute day (once a week) + Bonus London
+  extra days. They are carved out of the daily total (§5, §6 C3–C5).
+- **Q3 — ✅ Resolved.** No special rounding logic required; the user reconciles
+  manually. The tool just needs to display the post-everything **savings
+  residual** (and the per-pot amounts).
+- **Q4 — ✅ Resolved.** Salaries are fixed; **no** variable/bonus-month or
+  one-off income line is needed.
+- **Q5 — ✅ Resolved.** The tool is a **single-month snapshot** — it does **not**
+  track balances or how much is held where. Sinking-fund inputs (Lumpy, Holidays)
+  must simply be **editable**, so that e.g. booking a holiday lets the user raise
+  that fund's monthly contribution.
+
+### Remaining minor item
+- **R1** — Confirm the bank-holiday calendar source/region (assumed England &
+  Wales) and behaviour if a pay date and its day-before are both around a
+  multi-day bank-holiday weekend (the working-day roll-back handles this, but
+  worth a sanity check against a real Easter/Christmas example).
 
 ---
 
 ## 11. Acceptance fixture (May 2026)
 
-Given the §3 inputs and pay month **May** (period 18 Apr 2026 → 19 May 2026, 31 days):
+Given the §3 inputs and pay month **May** (period 18 Apr 2026 → 19 May 2026, 31 days;
+4 cleaning days, 4 commute days, Bonus London 0):
 
 | Quantity | Expected |
 |----------|---------:|
 | Days in period | 31 |
+| Cleaning days / Commute days | 4 / 4 |
 | Total In | 11,885.00 |
 | Bills pot | 4,761.00 |
-| Main / spending pot | 3,100.00 |
+| Cleaner pot | 208.00 |
+| Commute pot | 240.00 |
+| Main / spending pot | 2,652.00 |
 | Moo money pot | 1,100.00 |
 | Lumpy pot | 491.42 |
 | Holidays pot | 633.33 |
 | **Savings (residual)** | **1,799.25** |
 
-A correct re-implementation fed the §3 inputs must reproduce this table.
+A correct re-implementation fed the §3 inputs must reproduce this table. Note the
+savings residual is unchanged from the pre-split model — Cleaner and Commute are
+reorganised *out of* Main, not added on top.
