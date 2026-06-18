@@ -329,9 +329,11 @@ period, and the cleaning-day / commute-day counts.
   Wales) and behaviour if a pay date and its day-before are both around a
   multi-day bank-holiday weekend (the working-day roll-back handles this, but
   worth a sanity check against a real Easter/Christmas example).
-- **R2** — Provide the **actual annual Council Tax** (or installment × count); the
-  £3,500 used for the £291.67/mo smoothed figure is an estimate from the Mar–May
-  installments (~£338–354).
+- **R2** — *Deferred (non-blocking).* The £3,500 annual Council Tax (→ £291.67/mo)
+  and the assumed billing calendar (Council Tax £0 in Feb/Mar; TV License
+  Jan/Apr/Jul/Oct) are accepted as the working baseline. They are editable inputs,
+  so the real figures can be dropped in later and the §13 targets recompute
+  automatically — no code change needed.
 
 ---
 
@@ -413,8 +415,10 @@ Over a full year it returns to the trough (nets to zero). Per current bills:
 | Council Tax | 291.67 | +291.67 | −58.33 | £0 → ~£583 |
 | TV License | 14.96 | +14.96 | −29.91 | £0 → ~£30 |
 
-**Target table (illustrative — confirm billing calendar, see below).**
-Assumes Council Tax £0 in **Feb & Mar** and TV License paid **Jan/Apr/Jul/Oct**:
+**Target table (working baseline — values editable in the tool).**
+Uses the estimated Council Tax annual (£3,500), Council Tax £0 in **Feb & Mar**,
+and TV License paid **Jan/Apr/Jul/Oct**. These are accepted as the starting
+defaults; they can be edited later without code changes:
 
 | Month-end | Council Tax | TV License | **Target pot** |
 |-----------|------------:|-----------:|---------------:|
@@ -442,8 +446,11 @@ Assumes Council Tax £0 in **Feb & Mar** and TV License paid **Jan/Apr/Jul/Oct**
   ~£525 if you start in April), otherwise an early Council Tax installment overdraws
   it. After one full cycle it self-sustains.
 
-> **To finalise the exact table I need three inputs (also R2):**
-> 1. Actual **annual Council Tax** (or installment × count) — £3,500 is an estimate.
-> 2. Which **two months Council Tax is £0** — the Mar 2026 statement shows a payment,
->    so the Feb/Mar assumption above is probably wrong for your council.
-> 3. Which **months the TV License** quarterly payment lands.
+> **Estimates accepted as the working baseline (refine later via the editable inputs):**
+> 1. **Annual Council Tax** = £3,500 (estimate from the Mar–May installments).
+> 2. Council Tax **£0 months** = Feb & Mar (assumption; the Mar 2026 statement shows
+>    a payment, so the real free months likely differ for this council).
+> 3. **TV License** paid Jan/Apr/Jul/Oct (assumption).
+>
+> Because all three are editable inputs, swapping in the real figures later
+> recomputes the target table with no code change.
